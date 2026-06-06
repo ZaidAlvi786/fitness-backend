@@ -1,0 +1,40 @@
+# Render Blueprint — deploy the Momentum FastAPI backend on the free web-service tier.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Secrets (sync: false) are NOT stored here — set them in the Render dashboard
+# (Service > Environment) or when the Blueprint first syncs. Everything else is safe to commit.
+services:
+  - type: web
+    name: momentum-backend
+    runtime: python
+    plan: free                       # free tier: 512MB, sleeps after ~15 min idle
+    region: oregon                   # pick the region closest to your Supabase project
+    buildCommand: pip install --upgrade pip && pip install .
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health         # unauthenticated liveness probe
+    envVars:
+      - key: ENVIRONMENT
+        value: production            # disables /docs & /redoc; set "development" to expose them
+      - key: LOG_LEVEL
+        value: INFO
+      - key: SUPABASE_JWT_AUDIENCE
+        value: authenticated
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: LLM_TIMEOUT_SECONDS
+        value: "30"
+      - key: LLM_MAX_TOKENS
+        value: "1024"
+      - key: COACHING_RATE_LIMIT_PER_HOUR
+        value: "10"
+      # --- secrets / per-deploy values: set these in the dashboard ---
+      - key: SUPABASE_URL
+        sync: false
+      - key: DATABASE_URL            # use the SESSION pooler DSN (see README), not the direct host
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
